@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="qna">
+
+	<!-- 인철 list -->
+	<select id="list" parameterType="map" resultType="pairplan_v1.model.qna.QnaDTO">
+	<![CDATA[ 
+		select L.*, M.mem_nick
+		from (select * from( select rownum r, V.* from( select * from qna order by qna_group desc, qna_step asc )V ) where r >= #{first} and r <= #{last})L join member M
+		on L.mem_num = M.mem_num
+	]]>
+	</select>
+	
+	<!-- 질문 등록 -->
+	<insert id="insert" parameterType="pairplan_v1.model.qna.QnaDTO">
+		<selectKey keyProperty="qna_num" resultType="int" order="BEFORE">
+			select nvl2(max(qna_num), max(qna_num)+1, 1) from qna
+		</selectKey>
+		
+		insert into qna values(#{qna_num}, #{qna_title}, #{qna_cont}, #{qna_pass}, default, #{mem_num}, #{qna_num}, 0)
+	</insert>
+	
+	<!-- 전체 글의 개수 조회 -->
+	<select id="countall" resultType="int">
+		select count(*) from qna
+	</select>	
+	
+	<!-- 질문 보기 전 비밀번호 확인 -->
+	<select id="contPass" parameterType="int" resultType="String">
+		select qna_pass from qna where qna_num = #{qna_num}
+	</select>
+	
+	
+	<!-- 홍재 content -->
+	<select id="content" parameterType="int" resultType="pairplan_v1.model.qna.QnaDTO">
+		select L.*, M.mem_nick
+		from (select * from qna where qna_num = #{qna_num})L join member M
+		on L.mem_num = M.mem_num
+	</select>
+	
+	<!-- 은영 delete -->
+	<delete id="delete" parameterType="int">
+		delete from qna where qna_num = #{qna_num}
+	</delete>
+	
+	<!-- 태선 update -->
+	<update id="update" parameterType="pairplan_v1.model.qna.QnaDTO" >
+		update qna set mem_num = #{mem_num}, qna_title = #{qna_title}, qna_cont = #{qna_cont} where qna_num = #{qna_num}
+	</update>
+	
+	<!--  bStep 1씩 증가 -->
+	<!-- <update id="reply_update" parameterType="pairplan_v1.model.qna.QnaDTO" >
+		update qna set qna_step = qna_step+1 where qna_group = #{qna_group} and qna_step > #{qna_step}
+	</update> -->
+	
+	<!-- reply 입력 -->
+	<insert id="reply" parameterType="pairplan_v1.model.qna.QnaDTO">	
+		<selectKey keyProperty="qna_num" resultType="int" order="BEFORE">
+			select nvl2(max(qna_num), max(qna_num)+1, 1) from qna
+		</selectKey>
+		
+		insert into qna values(#{qna_num}, #{qna_title}, #{qna_cont}, #{qna_pass}, default, #{mem_num}, #{qna_group}, #{qna_step})
+	</insert>
+	
+	<!-- 패스워드 조회 -->
+	<select id="check_password" parameterType="int" resultType="string">
+		select qna_pass from qna where qna_num = #{qna_num}
+	</select>
+	
+
+</mapper>

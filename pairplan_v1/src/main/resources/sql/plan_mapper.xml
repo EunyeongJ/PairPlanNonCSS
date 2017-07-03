@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="plan">
+
+	<!-- 계획 번호 조회 -->
+	<select id="select_plan_number" resultType="int">
+		select plan_seq.nextval from dual
+	</select>
+	
+	<!-- 계획 저장 -->
+	<insert id="insert_plan" parameterType="pairplan_v1.model.plan.PlanDTO">
+		insert into plan values(
+				#{plan_num}, #{mem_num}, #{plan_people}, #{plan_cont},
+					#{plan_title}, default, #{plan_img}, default)
+	</insert>
+	
+	<!-- 계획 수정 -->
+	<update id="update_plan" parameterType="pairplan_v1.model.plan.PlanDTO">
+		update plan set
+				plan_people = #{plan_people}, plan_cont = #{plan_cont},
+					plan_title = #{plan_title}, plan_img = #{plan_img} where plan_num = #{plan_num}
+	</update>
+	
+	<!-- 계획 일정 저장 -->
+	<insert id="insert_planInfo" parameterType="pairplan_v1.model.plan.ScheduleDTO">
+		insert into schedule values(
+			#{plan_num},#{sche_order},#{sche_lng},#{sche_lat},#{sche_addr},#{sche_title},#{sche_start},#{sche_end}		
+		)
+	</insert>
+	
+	<!-- 계획 일정 조회 -->
+	<select id="select_planInfo" parameterType="int" resultType="pairplan_v1.model.plan.ScheduleDTO">
+		select * from schedule where plan_num = #{plan_num}	
+	</select>
+	
+	<!-- 계획 일정 삭제 -->
+	<delete id="delete_planInfo" parameterType="int">
+		delete from schedule where plan_num = #{plan_num}
+	</delete>
+	
+	<!-- 선택한 계획 정보 조회 -->
+	<select id="select_plan" parameterType="int" resultType="pairplan_v1.model.plan.PlanDTO">
+		select * from plan where plan_num = #{plan_num}
+	</select>
+
+	<!-- 계획 삭제 -->
+	<delete id="delete_plan" parameterType="int">
+		delete from plan where plan_num = #{plan_num}
+	</delete>
+	
+	<!-- 계획 리스트 조회 -->
+	<select id="select_planList" parameterType="int" resultType="pairplan_v1.model.plan.PlanDTO">
+	<![CDATA[ 
+		select * from (select rownum r, V.* from (select P.* from plan P order by DBMS_RANDOM.RANDOM())V)T  where T.r> #{num} and T.r<= (12+#{num})
+	]]>
+	</select>
+	<select id="select_planList_recent" parameterType="int" resultType="pairplan_v1.model.plan.PlanDTO">
+	<![CDATA[ 
+		select * from (select rownum r, V.* from (select P.* from plan P order by P.plan_date desc)V)T  where T.r> #{num} and T.r<= (12+#{num})
+	]]>
+	</select>
+	<select id="select_planList_popular" parameterType="int" resultType="pairplan_v1.model.plan.PlanDTO">
+	<![CDATA[
+		select * from (select rownum r, V.* from (select P.* from plan P order by P.plan_hit desc)V)T  where T.r> #{num} and T.r<= (12+#{num}) 
+	]]>
+	</select><!-- 55~65 -->
+	
+	<!-- 계획 리스트 검색 -->
+	<select id="search_plan" parameterType="pairplan_v1.model.plan.SearchDTO" resultType="pairplan_v1.model.plan.PlanDTO">
+	<![CDATA[ 
+		select * from (select rownum r, V.* from (select P.* from plan P 
+		where
+		P.plan_num in (select S.plan_num from schedule S 
+		where S.sche_addr like '%'||#{search_text}||'%' 
+		and S.sche_start <= #{start_date}
+		and S.sche_end >= #{end_date})
+		order by DBMS_RANDOM.RANDOM() desc)V)T  where T.r> #{listBlock} and T.r<= 12+#{listBlock}
+	]]>
+	</select>
+	<select id="search_plan_recent" parameterType="pairplan_v1.model.plan.SearchDTO" resultType="pairplan_v1.model.plan.PlanDTO">
+	<![CDATA[ 
+		select * from (select rownum r, V.* from (select P.* from plan P
+		where
+		P.plan_num in (select S.plan_num from schedule S 
+		where S.sche_addr like '%'||#{search_text}||'%' 
+		and S.sche_start <= #{start_date}
+		and S.sche_end >= #{end_date})
+		order by P.plan_date desc)V)T  where T.r> #{listBlock} and T.r<= 12+#{listBlock}
+	]]>
+	</select>
+	<select id="search_plan_popular" parameterType="pairplan_v1.model.plan.SearchDTO" resultType="pairplan_v1.model.plan.PlanDTO">
+	<![CDATA[
+		select * from (select rownum r, V.* from (select P.* from plan P
+		where 
+		P.plan_num in (select S.plan_num from schedule S 
+		where S.sche_addr like '%'||#{search_text}||'%' 
+		and S.sche_start <= #{start_date}
+		and S.sche_end >= #{end_date})
+		order by P.plan_hit desc)V)T  where T.r> #{listBlock} and T.r<= 12+#{listBlock}
+	]]>
+	</select>
+	<!-- 동행 신청 생성 -->
+	<insert id="makePlanRequest" parameterType="map">
+		insert into req_status values(#{plan_num}, #{mem_num}, default)
+	</insert>
+	
+	<!-- 동행 요청 삭제 -->
+	<delete id="deletePlanRequest" parameterType="map">
+		delete from req_status where plan_num = #{plan_num} and mem_num = #{mem_num}
+	</delete>
+	
+	<!-- 조회수 증가 -->
+	<update id="planHitup" parameterType="int">
+		update plan set plan_hit = plan_hit + 1 where plan_num = #{plan_num}
+	</update>
+	
+	<!-- 만료된 계획을 검색 -->
+	<select id="searchExpired" resultType="int">
+	<![CDATA[
+		select plan_num from(select max(sche_end) as sche_end, plan_num from schedule group by plan_num) where sche_end < sysdate
+	]]>
+	</select>
+	
+	<!-- 만료된 계획을 만료 테이블로 이동 -->
+	<update id="exePlanMove" statementType="CALLABLE" parameterType="int">
+	{ call plan_move_proc (#{plan_num}) }
+	</update>
+	
+	<!-- 내가 동행 요청한 리스트 -->
+	<select id="myRequest" parameterType="int" resultType="pairplan_v1.model.plan.MyRequestDTO">
+		select V2.*, M.mem_nick as boss_nick from member M join 
+		(select V.*, P.mem_num as boss_num from 
+		(select * from req_status where mem_num = #{mem_num})V join plan P 
+		on V.plan_num = P.plan_num order by V.req_date)V2
+		on M.mem_num = V2.boss_num
+	</select>
+	
+	<!-- 다른 사용자에게 동행 요청받은 리스트 -->
+	<select id="waitAccept" parameterType="int" resultType="pairplan_v1.model.plan.WaitAcceptDTO">
+		select M.mem_num, M.mem_nick, M.mem_img, M.mem_gender, M.mem_age, M.mem_point, V.plan_num from member M join 
+		(select * from req_status where plan_num in (select plan_num from plan where mem_num = #{mem_num}) order by req_date)V 
+		on M.mem_num = V.mem_num
+	</select>
+	
+	<!-- 추천 -->
+	
+	<!-- 여행시작일 가져오기 -->
+	<select id="get_start_date" parameterType="int" resultType="java.sql.Date">
+		select min(sche_start) from schedule where plan_num = #{plan_num} group by plan_num 
+	</select>
+	<!-- 여행종료일 가져오기 -->
+	<select id="get_end_date" parameterType="int" resultType="java.sql.Date">
+		select max(sche_end) from schedule where plan_num = #{plan_num} group by plan_num
+	</select>
+	
+	<!-- 지역추천 -->
+	<select id="recommand_plan_loc" parameterType="String" resultType="pairplan_v1.model.plan.PlanJoinDTO">
+		select * from plan where plan_num in (select DISTINCT plan_num from schedule where sche_addr like '%'||#{loc_name}||'%')
+	</select>
+	<!-- 여행스타일추천 -->	
+	<select id="recommand_plan_style" parameterType="int" resultType="pairplan_v1.model.plan.PlanJoinDTO">
+		select * from plan where plan_num in (select distinct plan_num from p_travel_style where style_num = #{style_num})
+	</select>
+	
+	<!-- 여행조회순추천 -->   
+   <select id="recommand_plan_hit" resultType="pairplan_v1.model.plan.PlanJoinDTO">
+      <![CDATA[
+         select S.* from (select rownum r, V.* from (select * from plan order by plan_hit desc)V)S where S.r<= 10
+      ]]>
+   </select>
+
+	<!-- 선택한 계획 정보 조회 -->
+	<select id="select_planJoin" parameterType="int" resultType="pairplan_v1.model.plan.PlanJoinDTO">
+	   select * from plan where plan_num = #{plan_num}
+	</select>
+	
+</mapper>

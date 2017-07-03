@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="member">
+
+	<!-- 시퀀스 대신에 사용하는 것 -->
+	<select id="sequence" resultType="int">
+		select nvl2(max(mem_num), max(mem_num)+1, 1) from member
+	</select>
+	
+	<!-- 아이디 중복체크 -->
+	<select id="confirmId" parameterType="String" resultType="int">
+		select count(*) from member where mem_id = #{confirmId}
+	</select>
+	
+	<!-- 닉네임 중복체크 -->
+	<select id="confirmNick" parameterType="String" resultType="int">
+		select count(*) from member where mem_nick = #{confirmNick}
+	</select>
+	
+	<!-- 이메일 중복체크 -->
+	<select id="confirmEmail" parameterType="String" resultType="int">
+		select count(*) from member where mem_email = #{confirmEmail}
+	</select>
+
+	<!-- 회원가입 -->
+	<insert id="memberJoin" parameterType="pairplan_v1.model.member.MemberDTO">
+		insert into member values(#{mem_num}, #{mem_id}, #{mem_pass}, #{mem_nick},
+		#{mem_img}, #{mem_name}, #{mem_gender}, #{mem_age}, #{mem_email}, default, default)
+	</insert>	
+	
+	<!-- 회원 로그인 -->
+	<select id="memberLogin" parameterType="map" resultType="int">
+		select count(*) from member where mem_id = #{mem_id} and mem_pass = #{mem_pass}
+	</select>
+	
+	<!-- 회원 아이디로 회원 정보 뽑아오기 -->
+	<select id="getMemberNumber" parameterType="String" resultType="pairplan_v1.model.member.MemberDTO">
+		select * from member where mem_id = #{mem_id}
+	</select>
+	
+	<!-- 회원 넘버로 회원 정보 뽑아오기 -->
+	<select id="memberInfo" parameterType="int" resultType="pairplan_v1.model.member.MemberDTO">
+		select * from member where mem_num = #{mem_num}
+	</select>
+	
+	<!-- 회원 정보 수정 -->		
+	<update id="memberInfoModify" parameterType="pairplan_v1.model.member.MemberDTO">
+		update member set mem_pass = #{mem_pass}, mem_img = #{mem_img} where mem_num = #{mem_num}		
+	</update>
+	
+	<!-- 아이디 찾기 전에 일단 가입된 사람 있는지 확인 -->
+	<select id="memberIdFindCheck" parameterType="map" resultType="int">
+		select count(*) from member where mem_name = #{idFindNameCheck} and mem_email = #{idFindEmailCheck}
+	</select>
+	
+	<!-- 아이디 찾기 -->
+	<select id="memberIdFind" parameterType="map" resultType="String">
+		select mem_id from member where mem_name = #{idFindNameCheck} and mem_email = #{idFindEmailCheck}
+	</select>
+	
+	<!-- 비밀번호 찾기전에 일단 가입된 사람 있는지 확인 -->
+	<select id="memberPasswordFindCheck" parameterType="map" resultType="int">
+		select count(*) from member where mem_id = #{passwordFindIdCheck} and mem_email = #{passwordFindEmailCheck}
+	</select>
+	
+	<!-- 비밀번호 찾기 -->
+	<select id="memberPasswordFind" parameterType="map" resultType="String">
+		select mem_pass from member where mem_id = #{passwordFindIdCheck} and mem_email = #{passwordFindEmailCheck}
+	</select>	
+	
+	<!-- 회원 탈퇴 전에 비밀번호 맞는지 확인... -->
+	<select id="memberDeleteInfoPasswordCheck" parameterType="map" resultType="int">
+		select count(*) from member where mem_num = #{mem_num} and mem_pass = #{mem_pass}
+	</select>
+	
+	<!-- 회원 탈퇴 전에 옮기고 탈퇴...-->
+	<insert id="memberDeleteInfoInsert" parameterType="map">
+		insert into e_member select * from member where mem_num = #{mem_num}
+	</insert>
+	
+	<!-- 회원탈퇴 -->
+	<delete id="memberInfoDelete" parameterType="map">
+		delete from member where mem_num = #{mem_num} and mem_pass = #{mem_pass}
+	</delete>
+	
+	<!-- 계획 넘버로 그룹 회원 정보 뽑아오기 -->
+	<select id="groupMembers" parameterType="int" resultType="pairplan_v1.model.member.MemberDTO">
+		select mem_num, mem_nick, mem_img, mem_gender, mem_age, mem_name, mem_email 
+		from member where mem_num in
+		(select mem_num from p_group where plan_num = #{plan_num})
+	</select>	
+	
+	<!--만료 계획 넘버로 그룹 회원 정보 뽑아오기 -->
+	<select id="e_GroupMembers" parameterType="int" resultType="pairplan_v1.model.member.MemberDTO">
+		select * from member where mem_num in 
+		(select mem_num from e_group where e_plan_num = #{e_plan_num})
+	</select>
+
+</mapper>

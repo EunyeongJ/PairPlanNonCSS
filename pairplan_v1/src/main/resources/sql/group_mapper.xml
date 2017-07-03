@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="group">
+
+	<insert id="create" parameterType="pairplan_v1.model.plan.PlanDTO">
+		insert into p_group values(#{plan_num} , #{mem_num})
+	</insert>
+	
+	<select id="count_people" parameterType="int" resultType="int">
+		select count(*) from p_group where plan_num = #{plan_num}
+ 	</select>
+ 	
+ 	<select id="select_mem" parameterType="int" resultType="pairplan_v1.model.plan.GroupDTO">
+		select * from p_group where mem_num = #{mem_num} order by plan_num asc
+ 	</select>
+ 	
+ 	<select id="select_plan" parameterType="int" resultType="pairplan_v1.model.plan.GroupDTO">
+		select * from p_group where plan_num = #{plan_num}
+ 	</select>
+ 	
+ 	<!-- 그룹에 존재하는지 확인 -->
+ 	<select id="check_group" resultType="int">
+ 		select count(*) from p_group where plan_num = #{plan_num} and mem_num = #{mem_num}
+ 	</select>
+ 	
+ 	<!-- 동행 요청 수락 -->
+	<insert id="acceptPlanRequest" parameterType="map">
+		insert into p_group values(#{plan_num}, #{mem_num})
+	</insert>
+	
+</mapper>

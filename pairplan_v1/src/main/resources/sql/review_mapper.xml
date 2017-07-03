@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="review">
+	<!-- 리뷰 저장 -->
+	<insert id="review_write" parameterType="pairplan_v1.model.review.ReviewDTO">	
+		<selectKey keyProperty="re_num" resultType="int" order="BEFORE">
+			select nvl2(max(re_num), max(re_num) + 1, 1) from review
+		</selectKey>
+		
+		insert into review values(#{re_num}, #{e_plan_num}, #{mem_num}, 
+		#{re_title}, #{re_cont}, default, #{re_imgs}, #{re_mainImg}, default)
+	</insert>
+	
+	<!-- 리뷰 번호 조회 -->
+	<select id="review_num" parameterType="int" resultType="int">
+		select re_num from review where e_plan_num = #{e_plan_num}
+	</select>
+	
+	<!-- 리뷰 조회수 증가 -->
+	<update id="reviewHitUp">
+		update review set re_hit = re_hit + 1 where re_num = #{re_num}
+	</update>
+	
+	<!-- 만료된 여행의 목록을 검색 -->
+	<select id="expired_planlist" parameterType="int" resultType="pairplan_v1.model.review.E_PlanDTO">
+		select * from e_plan where e_plan_num in
+		(select e_plan_num from e_group where mem_num = #{mem_num} and e_plan_num not in
+		(select e_plan_num from review where mem_num = #{mem_num}))
+	</select>
+	
+	<!-- 만료된 여행의 이미지를 검색(메인사진을 선택하기 위함) -->
+	<select id="expired_image" parameterType="int" resultType="string">
+		select e_plan_img from e_plan where e_plan_num = #{e_plan_num}
+	</select>
+	
+	<!-- 리뷰 목록 검색 -->
+	<select id="review_list" resultType="pairplan_v1.model.review.ReviewDTO">
+		select * from review order by re_date desc
+	</select>
+	
+	<!-- 리뷰 상세 조회(만료 여행 계획 및 리뷰 정보) -->
+	<select id="review_view_info" parameterType="int" resultType="pairplan_v1.model.review.ReviewContentDTO">
+		select r.re_num, r.mem_num, r.re_title, r.re_cont, r.re_date, r.re_hit,
+        		e.e_plan_num, e.e_plan_people, e.e_plan_cont, e.e_plan_title, e.e_plan_img, e.e_plan_date, e.e_plan_hit
+		from review r join e_plan e on r.e_plan_num = e.e_plan_num
+		where r.re_num = #{re_num}
+	</select>
+	
+	<!-- 리뷰 지역 정보 -->
+	<select id="e_plan_schedule" parameterType="int" resultType="pairplan_v1.model.review.E_ScheduleDTO">
+		select * from e_schedule where e_plan_num = #{e_plan_num}
+	</select>
+	
+	<!-- 리뷰 내용 검색(수정에서 사용) -->
+	<select id="review_modify_view" parameterType="int" resultType="pairplan_v1.model.review.ReviewDTO">
+		select * from review where re_num = #{re_num}
+	</select>
+	
+	<!-- 리뷰 내용 수정 -->
+	<update id="review_modify" parameterType="pairplan_v1.model.review.ReviewDTO">
+		update review set re_title = #{re_title}, re_cont = #{re_cont}, re_imgs = #{re_imgs},
+							 	re_mainImg = #{re_mainImg}
+		where re_num = #{re_num}
+	</update>
+	
+	<!-- 리뷰 내용 삭제 -->
+	<delete id="review_delete">
+		delete from review where re_num = #{re_num}
+	</delete>
+	
+	<!-- 리뷰 작성자 조회 -->
+	<select id="review_writer" parameterType="int" resultType="pairplan_v1.model.member.MemberDTO">
+		select * from member where mem_num = (select mem_num from review where re_num = #{re_num})
+	</select>
+	
+	<!-- 만료 계획 조회 -->
+	<select id="e_planInfo" parameterType="int" resultType="pairplan_v1.model.review.E_PlanDTO">
+		select * from e_plan where e_plan_num = #{e_plan_num}
+	</select>
+	
+	<!-- 만료 계획 작성자 조회 -->
+	<select id="e_plan_writer" parameterType="int" resultType="pairplan_v1.model.member.MemberDTO">
+		select * from member where mem_num = (select mem_num from e_plan where e_plan_num = #{e_plan_num})
+	</select>
+	
+	<!-- 코멘트 추가하기 -->
+	<insert id="insert_comment" parameterType="pairplan_v1.model.review.CommentDTO">
+		<selectKey keyProperty="cmt_num" resultType="int" order="BEFORE">
+			select nvl2(max(cmt_num), max(cmt_num) + 1, 1) from comments
+		</selectKey>
+	
+		insert into comments values(#{cmt_num}, #{re_num}, #{cmt_cont}, #{mem_num}, default)
+	</insert>
+	
+	<!-- 코멘트 가져오기 -->
+	<select id="get_comment" parameterType="int" resultType="pairplan_v1.model.review.CommentDTO">
+		select C.*, M.mem_nick, M.mem_img from comments C join member M on C.mem_num = M.mem_num where re_num = #{re_num} order by C.cmt_date
+	</select>
+	
+	<!-- 코멘트 개수 -->
+	<select id="count_comment" parameterType="int" resultType="int">
+		select count(*) from comments where re_num = #{re_num}
+	</select>
+	
+	<!-- 코멘트 삭제 -->
+	<delete id="delete_comment" parameterType="int">
+		delete from comments where cmt_num = #{cmt_num}
+	</delete>
+</mapper>

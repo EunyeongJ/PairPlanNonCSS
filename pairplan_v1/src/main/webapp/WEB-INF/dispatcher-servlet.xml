@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<context:component-scan base-package="pairplan_v1"/>
+
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/view/"/>
+		<property name="suffix" value=".jsp"/>
+	</bean>
+	
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="defaultEncoding" value="utf-8"/>
+		<property name="maxUploadSize" value="100000000"/>
+		<property name="uploadTempDir" value="uploadtemp"/>
+	</bean>
+	
+	<!-- 파일 업로드시 저장할 위치 -->
+	<bean id="uploadPath" class="java.lang.String">
+		<constructor-arg value="C:\IDE\workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\pairplan_v1\resources\images\"></constructor-arg>
+		<!-- <constructor-arg value="C:\Spring\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\pairplan_v1\resources\images\"></constructor-arg> -->
+	</bean>
+	
+	<!-- 이미지 파일 서버 위치 -->
+	<bean id="imagePath" class="java.lang.String">
+		<constructor-arg value="http://localhost:8181/pairplan_v1/resources/images/"></constructor-arg>
+	</bean>
+	
+	<!-- 스케줄러 등록 -->
+	<task:scheduler id="jobScheduler" pool-size="10"/>
+	<task:annotation-driven scheduler="jobScheduler"/>
+	
+</beans>

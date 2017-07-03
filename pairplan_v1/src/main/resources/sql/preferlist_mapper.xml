@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="preferlist">
+
+	<!--저장된 여행 스타일 -->
+	<select id="travel" resultType="pairplan_v1.model.preferlist.Travel_StyleDTO">
+		select * from travel_style
+	</select>
+	
+	<!-- 저장된 여행 지역 -->
+	<select id="location" resultType="pairplan_v1.model.preferlist.LocationDTO">
+		select * from location
+	</select>
+	
+	<!-- 선호 지역 저장-->
+	<insert id="memberJoinLocation" parameterType="map">	
+		insert into w_location values(#{mem_num}, #{loc_num})
+	</insert>
+	
+	<!-- 선호 여행 스타일 저장 -->
+	<insert id="memberJoinTravelStyle" parameterType="map"> 				
+		insert into w_travel_style values(#{mem_num}, #{style_num})
+	</insert>
+	
+	<!-- 회원 넘버로 선호지역 뽑아 온걸 지역테이블이랑 아우터 조인해서 뽑아낸다. -->
+	<select id="memberWishLocation" parameterType="int" resultType="pairplan_v1.model.preferlist.OuterJoinLocationDTO">
+		select V.mem_num, L.loc_num, L.loc_name from (select * from w_location where mem_num = #{mem_num}) V full join location L on V.loc_num = L.loc_num order by L.loc_num asc
+	</select>	
+	
+	<!-- 회원 넘버로 선호여행스타일 뽑아 온걸 여행스타일테이블이랑 아우터 조인해서 뽑아낸다. -->
+	<select id="memberWishTravelStyle" parameterType="int" resultType="pairplan_v1.model.preferlist.M_OuterJoinTravel_StyleDTO">
+		select V.mem_num, L.style_num, L.style_name from (select * from w_travel_style where mem_num = #{mem_num}) V full join travel_style L on V.style_num = L.style_num order by L.style_num asc
+	</select>
+
+	<!-- 회원 정보 수정 : 선호 지역 변경 > 삭제 후 insert-->
+	<delete id="memberWishLocationDelete" parameterType="int">
+		delete from w_location where mem_num = #{mem_num}
+	</delete>
+		
+	<!-- 회원 정보 수정 : 선호 여행 스타일 변경 > 삭제 후 insert -->
+	<delete id="memberWishTravelStyleDelete" parameterType="int">
+		delete from w_travel_style where mem_num = #{mem_num}
+	</delete>
+	
+	<!-- 계획 여행 스타일 저장 -->
+	<insert id="planJoinTravelStyle" parameterType="hashmap">
+		insert into p_travel_style values(#{plan_num}, #{style_num})
+	</insert>
+	
+	<!-- 계획 여행스타일 조회(선택항목만) -->
+	<select id="selectPlanStyle" parameterType="int" resultType="pairplan_v1.model.preferlist.Travel_StyleDTO">
+		select S.style_num ,S.style_name 
+		from p_travel_style U join travel_style S
+		on U.style_num = S.style_num
+		where U.plan_num = #{plan_num}
+	</select>
+	
+	<!-- 계획 여행스타일  전체 조회(모든항목과 선택한항목)-->
+	<select id="selectPlanAllStyle" parameterType="int" resultType="pairplan_v1.model.preferlist.P_OuterJoinTravel_StyleDTO">
+		select V.plan_num, L.style_num, L.style_name 
+		from (select * from p_travel_style where plan_num = #{plan_num}) V right outer join travel_style L
+		on V.style_num = L.style_num
+		order by L.style_num asc
+	</select>
+	
+	<!-- 계획 여행스타일 삭제 -->
+	<delete id="delete_travelStyle" parameterType="int">
+		delete from p_travel_style where plan_num = #{plan_num}
+	</delete>
+	
+	<!-- 만료 계획 여행스타일 조회(선택항목만) -->
+	<select id="e_planStyle" parameterType="int" resultType="string">
+		select style_name from travel_style where style_num in 
+		(select style_num from e_travel_style where e_plan_num = #{e_plan_num})
+	</select>
+
+
+	<!-- 추천 -->
+	
+	<!-- 회원 넘버로 선호지역 뽑아 온걸 지역테이블이랑 이너 조인해서 뽑아낸다. -->
+	<select id="memberWishLocationSelect" parameterType="int" resultType="pairplan_v1.model.preferlist.OuterJoinLocationDTO">
+		select V.mem_num, L.loc_num, L.loc_name from (select * from w_location where mem_num = #{mem_num}) V join location L on V.loc_num = L.loc_num order by L.loc_num asc
+	</select>	
+	
+	<!-- 회원 넘버로 선호여행스타일 뽑아 온걸 여행스타일테이블이랑 이너 조인해서 뽑아낸다. -->
+	<select id="memberWishTravelStyleSelect" parameterType="int" resultType="pairplan_v1.model.preferlist.M_OuterJoinTravel_StyleDTO">
+		select V.mem_num, L.style_num, L.style_name from (select * from w_travel_style where mem_num = #{mem_num}) V join travel_style L on V.style_num = L.style_num order by L.style_num asc
+	</select>
+</mapper>
